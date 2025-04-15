@@ -6,7 +6,7 @@
 
 ## Introduction
 
-### Explanation
+### Penjelasan Singkat
 Isar adalah database NoSQL yang cepat, skalabel, dan sepenuhnya offline yang dibuat khusus untuk Flutter, dengan operasi asinkron, pencarian teks lengkap, dukungan ACID, tanpa boilerplate—dan sepenuhnya kompatibel di iOS, Android, dan Desktop.
 
 
@@ -34,7 +34,8 @@ dev_dependencies:
 ```
 
 ## Implementation
-1. Langkah pertama untuk menggunakan database Isar kita perlu mendefine terlebih dahulu letak kita menyimpan data tersebut dengan bantuan library `path_provider` yang mana data ini nantinya akan disimpan pada project kita saja atau dalam aplikasinya sendiri ketika dijalankan
+### 1. Inisialisasi Database
+Langkah pertama adalah mengatur lokasi penyimpanan data dengan menggunakan bantuan library `path_provider`. Data akan disimpan secara lokal di direktori aplikasi.
 
 ```dart
 import 'package:isar/isar.dart';
@@ -53,7 +54,12 @@ class DatabaseService {
 
 ```
 
-2. Langkah Kedua setelah selesai untuk menggunakan database Isar kita perlu mendeklarasikan terlebih dahulu class untuk data yang akan kita simpan (class disini bisa kita ibaratkan sebagai tabel pada database SQL) seperti pada file `alarm.dart`:
+### 2. Membuat Model (Schema)
+Langkah selanjutnya adalah membuat model atau class yang akan digunakan sebagai schema untuk Isar. Gunakan anotasi @Collection() di atas class untuk menandai bahwa ini adalah model Isar. Model ini dapat dianalogikan seperti tabel di database SQL.
+
+Di sini kita juga menggunakan fungsi updateAlarm() daripada constructor untuk kemudahan dalam pembaruan data, menghindari potensi error ketika mendefinisikan constructor yang kompleks.
+
+Contoh file alarm.dart:
 
 ```dart
 import 'package:isar/isar.dart';
@@ -77,20 +83,69 @@ class Alarm {
   }
 }
 ```
-3. untuk memanggil sintax disini saya hanya akan menjelaskan 4 saja yaitu Mengambil semua data, Add data, Edit data, dan delete data
-   a. Mengambil semua data
-        untuk mengambil semua data pada database Isar kita bisa menggunakan sintax berikut
+
+Jangan lupa untuk memastikan penamaan part disesuaikan dengan nama file .dart seperti pada contoh di atas, yaitu `alarm.g.dart`. Setelah selesai membuat model, jalankan perintah berikut di terminal untuk menghasilkan file `alarm.g.dart`:
+
+```
+flutter pub run build_runner build
+```
+File `alarm.g.dart` akan berisi kode bagaimaan bentuk schema kita dalam data base.
+
+![image](https://github.com/user-attachments/assets/331e8758-c466-4b5d-bcef-b316352b51cf)
+
+
+### 3. Operasi CRUD (Create, Read, Update, Delete)
+Berikut adalah cara-cara umum yang dapat digunakan untuk operasi CRUD (Create, Read, Update, Delete) di database Isar.
+
+
+####  a. Mengambil Semua Data (Read)
+Untuk mengambil semua data dari database Isar, gunakan:
 
 ```dart
 final isarAlarms = await DatabaseService.db.alarms.where().findAll();
 ```
 
-dimana natinya hasil ini tetap akan di letakkan pada sebuah variable List<> sebagai perantara untuk dibaca oleh aplikasi (implemntasi ini sendiri bisa dilihat pada file `alarm_home.dart`). Berikut merupakan contoh hasil setelah data berhasil ditambahakn:
+Hasil dari query ini bisa disimpan dalam List<Alarm> untuk ditampilkan ke UI. Contoh implementasinya dapat dilihat di file [alarm_home.dart](lib/alarm_home.dart). Berikut merupakan contoh hasil setelah data berhasil dibaca:
+
+![image](https://github.com/user-attachments/assets/bebd2df7-c04d-4aed-92aa-4b7a3bdfdd2d)
+
     
-
-    b. Menambahkan data semua data
-        untuk mengambil semua data pada database Isar kita bisa menggunakan sintax berikut
+####  b. Menambahkan Data (Create)
+Untuk menambahkan data baru ke database, gunakan:
 
 ```dart
-final isarAlarms = await DatabaseService.db.alarms.where().findAll();
+await DatabaseService.db.writeTxn(() async {
+  DatabaseService.db.alarms.put(newAlarm);
+});
 ```
+Contoh implementasinya dapat dilihat di file [alarm_add.dart](lib/alarm_add.dart). Berikut merupakan contoh hasil setelah data berhasil ditambahkan:
+
+![image](https://github.com/user-attachments/assets/429a7459-7191-467d-a216-18c2f24c683d)
+
+    
+####  c. Memperbarui Data (Update)
+Untuk memperbarui data yang sudah ada, gunakan:
+
+```dart
+await DatabaseService.db.writeTxn(() async {
+  await DatabaseService.db.alarms.put(alarmToEdit);
+});
+```
+Contoh implementasinya dapat dilihat di file [alarm_home.dart](lib/alarm_home.dart). Berikut merupakan contoh hasil setelah data berhasil diperbarui:
+
+![image](https://github.com/user-attachments/assets/f4d2aca2-e3ce-4c65-9833-ab2d8fbf326b)
+
+      
+####  d. Menghapus Data (Delete)
+Untuk menghapus data berdasarkan ID, gunakan:
+
+```dart
+await DatabaseService.db.writeTxn(() async {
+  await DatabaseService.db.alarms.delete(alarmToDelete.id);
+});
+```
+Contoh implementasinya dapat dilihat di file [alarm_home.dart](lib/alarm_home.dart). Berikut merupakan contoh hasil setelah data berhasil dihapus:
+    
+![image](https://github.com/user-attachments/assets/19495c34-5fd2-448d-8eb1-58e218cfe31e)
+
+
